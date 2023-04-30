@@ -1,0 +1,95 @@
+mport sys
+from collections import defaultdict
+
+def load_grids():
+    # Load sample 3x2 and 3x3 Sudoku grids
+    grids_3x2 = [
+                [1, 0, 0],
+                [0, 6, 0] 
+]
+    grids_3x3 = [
+                [1, 0, 3],
+                [0, 0, 9],
+                [0, 5, 0]
+        # Add your 3x3 grids here as strings
+]
+    return grids_3x2 + grids_3x3
+
+def parse_grid(grid, n, m):
+    # Parse the grid from a string to a 2D list
+    return [list(map(int, grid[i:i + n])) for i in range(0, len(grid), n)]
+
+def print_grid(grid):
+    # Print the grid in a readable format
+    for row in grid:
+        print(' '.join(map(str, row)))
+
+def find_empty_cell(grid, n):
+    # Find the first empty cell in the grid
+    for i in range(n):
+        for j in range(n):
+            if grid[i][j] == 0:
+                return i, j
+    return None
+
+def valid_options(grid, n, m, row, col):
+    # Find valid options for a given cell
+    options = set(range(1, n + 1))
+    options -= set(grid[row])  # Remove numbers in the same row
+    options -= {grid[i][col] for i in range(n)}  # Remove numbers in the same column
+
+    # Remove numbers in the same box
+    box_row_start, box_col_start = row - row % m, col - col % m
+    for i in range(m):
+        for j in range(m):
+            options.discard(grid[box_row_start + i][box_col_start + j])
+
+    return options
+
+def find_best_empty_cell(grid, n, m):
+    # Find the empty cell with the fewest valid options
+    best_cell, min_options = None, sys.maxsize
+    for i in range(n):
+        for j in range(n):
+            if grid[i][j] == 0:
+                options = valid_options(grid, n, m, i, j)
+                if len(options) < min_options:
+                    best_cell, min_options = (i, j), len(options)
+    return best_cell
+
+def solve_sudoku(grid, n, m):
+    # Base case: If there are no empty cells, the grid is solved
+    empty_cell = find_best_empty_cell(grid, n, m)
+    if not empty_cell:
+        return True
+
+    row, col = empty_cell
+    # Try each valid option for the current cell and recursively solve the grid
+    for option in valid_options(grid, n, m, row, col):
+        grid[row][col] = option
+        if solve_sudoku(grid, n, m):
+            return True
+        grid[row][col] = 0  # Backtrack
+
+    return False
+
+def main():
+    grids = load_grids()
+    total_score = 0
+
+    for idx, grid_str in enumerate(grids):
+        n, m = (9, 3) if idx >= 5 else (6, 2)
+        grid = parse_grid(grid_str, n, m)
+
+        if solve_sudoku(grid, n, m):
+            print(f"Grid {idx + 1} solved:")
+            print_grid(grid)
+            total_score += 1.5
+        else:
+            print(f"Grid {idx + 1} failed to solve:")
+            print_grid(grid)
+
+    print(f"\nTotal score: {total_score}")
+
+if __name__ == "__main__":
+    main()
